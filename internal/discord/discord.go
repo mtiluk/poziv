@@ -36,14 +36,15 @@ type EmbedImage struct {
 	URL string `json:"url"`
 }
 
-func SendEmbed(webhook string, title string, price string, url string, imageURL string) error {
+func SendEmbed(webhook string, searchName string, title string, price string, url string, imageURL string) error {
 	embed := Embed{
 		Title:       title,
 		URL:         url,
 		Description: "A new item has been added to eBay.",
 		Color:       5763719,
 		Fields: []EmbedField{
-			{Name: "Price", Value: price, Inline: true}},
+			{Name: "Price", Value: price, Inline: true},
+			{Name: "Search", Value: searchName, Inline: true}},
 		Footer:    &EmbedFooter{Text: "Monitoring Agent"},
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
