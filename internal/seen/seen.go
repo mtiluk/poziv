@@ -61,21 +61,6 @@ func (s *Seen) Add(id string) {
 	s.ids[id] = time.Now().UTC()
 }
 
-func (s *Seen) AddAll(ids []string) {
-	now := time.Now().UTC()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, id := range ids {
-		s.ids[id] = now
-	}
-}
-
-func (s *Seen) Len() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.ids)
-}
-
 func (s *Seen) Save() error {
 	s.mu.Lock()
 	s.pruneLocked()

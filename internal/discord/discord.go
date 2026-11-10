@@ -3,9 +3,17 @@ package discord
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 )
+
+var ErrRateLimited = errors.New("discord: rate limited")
+
+var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 type Embed struct {
 	Image       *EmbedImage  `json:"image,omitempty"`
@@ -53,11 +61,22 @@ func SendEmbed(webhook string, searchName string, title string, price string, ur
 		embed.Image = &EmbedImage{URL: imageURL}
 	}
 
-	body, _ := json.Marshal(EmbedPayload{Embeds: []Embed{embed}})
-	resp, err := http.Post(webhook, "application/json", bytes.NewReader(body))
+	body, err := json.Marshal(EmbedPayload{Embeds: []Embed{embed}})
 	if err != nil {
-		return err
+		return fmt.Errorf("discord: encode payload: %w", err)
+	}
+	resp, err := httpClient.Post(webhook, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("discord: send: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return fmt.Errorf("%w (retry after %ss)", ErrRateLimited, resp.Header.Get("Retry-After"))
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return fmt.Errorf("discord: status %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
+	}
 	return nil
 }

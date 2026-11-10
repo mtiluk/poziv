@@ -128,6 +128,9 @@ func (c *Client) Search(ctx context.Context, p SearchParams) (SearchResponse, er
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		c.Invalidate()
+	}
 	if resp.StatusCode != http.StatusOK {
 		return sr, readAPIError(resp)
 	}
@@ -179,7 +182,6 @@ func (c *Client) Token(ctx context.Context) (string, error) {
 	}
 
 	c.token = tr.AccessToken
-
 	c.expiresAt = time.Now().Add(time.Duration(tr.ExpiresIn)*time.Second - time.Minute)
 
 	return c.token, nil

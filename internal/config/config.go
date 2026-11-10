@@ -2,41 +2,40 @@ package config
 
 import (
 	"encoding/base64"
+	"fmt"
 	"os"
-	"sync"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	AppID             string
-	CertID            string
 	EbayURL           string
 	BasicCreds        string
 	DiscordWebhookURL string
 }
 
-var (
-	once sync.Once
-	cfg  *Config
-)
+func Load() (*Config, error) {
+	_ = godotenv.Load()
 
-func GetConfig() *Config {
-	once.Do(func() {
-		_ = godotenv.Load()
-
-		appID := os.Getenv("AppID")
-		certID := os.Getenv("CertID")
-
-		cfg = &Config{
-			AppID:             appID,
-			CertID:            certID,
-			EbayURL:           os.Getenv("EbayURL"),
-			BasicCreds:        basicCreds(appID, certID),
-			DiscordWebhookURL: os.Getenv("discordWebhookURL"),
+	vars := map[string]string{}
+	var missing []string
+	for _, name := range []string{"AppID", "CertID", "EbayURL", "discordWebhookURL"} {
+		v := strings.TrimSpace(os.Getenv(name))
+		if v == "" {
+			missing = append(missing, name)
 		}
-	})
-	return cfg
+		vars[name] = v
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
+	}
+
+	return &Config{
+		EbayURL:           vars["EbayURL"],
+		BasicCreds:        basicCreds(vars["AppID"], vars["CertID"]),
+		DiscordWebhookURL: vars["discordWebhookURL"],
+	}, nil
 }
 
 func basicCreds(appID, certID string) string {
