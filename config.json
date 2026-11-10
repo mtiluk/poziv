@@ -1,0 +1,17 @@
+{
+  "quietHours": {
+    "start": "02:00",
+    "end": "06:00",
+    "timezone": "Europe/London",
+    "multiplier": 5
+  },
+  "searches": [
+    {
+      "name": "Wooting",
+      "query": "Wooting",
+      "minPrice": 0,
+      "maxPrice": 0,
+      "interval": "60s"
+    }
+  ]
+}
